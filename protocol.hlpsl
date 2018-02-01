@@ -3,6 +3,16 @@
 % Two servers: Shell (S) and Code (C)
 % Third server: Master (M)
 
+% S ------- {Ns.S}_PKc ------------> C
+% S <------ {Ns.Nc}_PKs ------------ C
+% S ------- {Nc}_PKc --------------> C
+% S <------ {OK}_PKs --------------- C
+% S ------- {Mess1}_PKc -----------> C
+% S <------ {Mess1.Mess2}_PKs ------ C
+% S ------- {OK.Mess1.Mess2}_PKc --> C
+% S -------------- {Mess1.Mess2}_PKm ------------> M
+% S <------------- {OK.rep}_PKs ------------------ M
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Protocal: 
 
