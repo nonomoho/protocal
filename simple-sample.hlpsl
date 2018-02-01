@@ -1,0 +1,103 @@
+%% PROTOCOL: NSPK: Needham-Schroeder Public-Key Protocol
+%% VARIANT: original version (of 1978) without key server
+%% PURPOSE: Two-party mutual autentication
+%% ALICE_BOB:
+%% 1. A  - {Na.A}_PKb ----> B
+%% 2. A <- {Na.Nb}_PKa ---  B
+%% 3. A  - {Nb}_PKb ------> B
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% définition du rôle alice, initiant le protocole
+role alice (A, B: agent,             
+            PKa, PKb: public_key,      
+            SND, RCV: channel(dy)) 
+played_by A def=
+
+  local State: nat, 
+        Na, Nb: text
+
+  init State:=0
+
+  transition  
+   
+    0.  State=0 /\ RCV(start) =|> 
+	State':=1 
+    /\ Na':=new() 
+    /\ secret(Na',na,{A,B}) 
+    /\ witness(A,B,bob_alice_na,Na')
+    /\ SND({Na'.A}_PKb)
+
+    2.  State=1 /\ RCV({Na.Nb'}_PKa) =|> 
+	State':=2 /\ SND({Nb'}_PKb)  /\ request(A,B,alice_bob_nb,Nb')
+
+end role
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% role bob 
+
+role bob (A, B: agent,             
+        PKa, PKb: public_key,      
+        SND, RCV: channel(dy)) 
+
+played_by B def=
+
+    local State: nat,
+        Na, Nb: text
+
+    init State:=0
+
+    transition 
+    
+    0. State=0 /\ RCV({Na'.A}_PKb) =|> State':=1 
+    /\ Nb':=new() 
+    /\ secret(Nb',nb,{A,B}) 
+    /\ SND({Na'.Nb'}_PKa) 
+    /\ witness(B,A,alice_bob_nb,Nb')
+
+    2. State=1 /\ RCV({Nb}_PKb) =|>
+    State':=2
+    /\ request(B,A,bob_alice_na,Na)
+
+end role
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% définition du rôle caractérisant une session
+role session(A, B: agent, PKa, PKb: public_key) def=
+
+  local SA, RA, SB, RB: channel(dy)
+
+  composition 
+
+	alice(A,B,PKa,PKb,SA,RA)
+     /\ bob(A,B,PKa,PKb,SB,RB)
+
+end role
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% définition du rôle caractérisant le scenario à exécuter
+role environment() def=
+
+    const a, b: agent,
+	pka, pkb, pki: public_key,
+    nb, na, alice_bob_nb: protocol_id
+
+    intruder_knowledge = {a, b, pka, pkb, pki, inv(pki)}
+
+    composition
+
+	session(a,b,pka,pkb)
+    /\ session(a,i,pka,pki)
+
+
+end role
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% pour l'instant, pas de section goal ici (donc pas de propriété à vérifier)
+goal
+    %%secrecy_of nb, na
+    authentication_on alice_bob_nb
+    authentication_on bob_alice_na
+end goal
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% lancement du rôle principal
+environment()
