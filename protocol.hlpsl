@@ -79,7 +79,7 @@ played_by S def=
         % Receive response
         receive.
             State=5
-            /\ Rcv({Rep'}_PKs) =|>
+            /\ Rcv(Rep') =|>
             State':=6
 
 end role
@@ -147,7 +147,7 @@ end role
 
 role master (
     M: agent,
-    PKm, PKs: public_key,
+    PKm: public_key,
     Snd, Rcv: channel(dy)
 )
 
@@ -169,7 +169,7 @@ played_by M def=
     =|>
         State':=1
         /\ Rep':=new()
-        /\ Snd({Rep'}_PKs)
+        /\ Snd(Rep')
 
 end role
 
