@@ -1,0 +1,86 @@
+% PURPOSE: Syncronisation between two servers before sending a common request to another one
+% DESCRIPTION:
+% Two servers: Shell (S) and Code (C)
+% Third server: Master (M)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Protocal: 
+
+% Role of Shell (S):
+
+role shell (
+    S, C, M: agent,
+    PKs, PKc, PKm: public_key,
+    Snd, Rcv: channel(dy)
+)
+
+end role
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Role of Code (C):
+
+role code (
+    S, C, M: agent,
+    PKs, PKc, PKm: public_key,
+    Snd, Rcv: channel(dy)
+)
+
+end role
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Role of Master (M):
+
+role master (
+    M: agent,
+    PKm: public_key,
+    Snd, Rcv: channel(dy)
+)
+
+end role
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Definition of session role:
+
+role session(
+    S, C: agent,
+    PKc, PKs, PKm: public_key,
+    Snd, Rcv: channel(dy)
+)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% The main role:
+
+role environment() def=
+
+    local 
+        Snd, Rcv: channel(dy)
+
+    const
+        s, c, m: agent, 
+        pks, pkc, pki, pkm: public_key,
+
+    intruder_knowledge = {s, c, m, pks, pkc, pkm, pki, inv(pki)}
+
+    composition
+    
+
+end role
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Description of goal properties:
+
+goal
+ 
+end goal
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Call of the main role:
+
+environment()
