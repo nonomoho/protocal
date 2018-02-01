@@ -21,8 +21,17 @@
 role shell (
     S, C, M: agent,
     PKs, PKc, PKm: public_key,
+    Mess1: text,
     Snd, Rcv: channel(dy)
 )
+
+played_by S def=
+
+    local 
+        Ns, Nc: text
+
+    init
+        State:=0
 
 end role
 
@@ -33,8 +42,17 @@ end role
 role code (
     S, C, M: agent,
     PKs, PKc, PKm: public_key,
+    Mess2: text,
     Snd, Rcv: channel(dy)
 )
+
+played_by C def=
+
+    local 
+        Ns, Nc: text,
+
+    init
+        State:=0
 
 end role
 
@@ -47,6 +65,13 @@ role master (
     PKm: public_key,
     Snd, Rcv: channel(dy)
 )
+
+played_by M def=
+
+    local Rep: text
+
+    init
+        State:=0    
 
 end role
 
