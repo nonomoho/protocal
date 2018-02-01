@@ -28,6 +28,7 @@ role shell (
 played_by S def=
 
     local 
+        State: nat,
         Ns, Nc, Mess2, Rep: text
 
     init
@@ -36,7 +37,7 @@ played_by S def=
     transition
 
         % Start communication with Code
-        start.
+        begin.
             State=0
             /\ Rcv(start) 
         =|>
@@ -50,10 +51,10 @@ played_by S def=
             /\ Rcv({Ns.Nc'}_PKs)
         =|>
             State':=2
-            /\ Snd({Nc'_PKc})
+            /\ Snd({Nc'}_PKc)
 
         % Everything is ok let's start creating the request
-        message. 
+        msg. 
             State=2
             /\ Rcv({ok}_PKs)
         =|>
@@ -63,7 +64,7 @@ played_by S def=
         % Receive full message from code
         messageComplete.
             State=3
-            /\ Rcv({Mess1.Mess2'}PKs)
+            /\ Rcv({Mess1.Mess2'}_PKs)
         =|>
             State':=4
             /\ Snd({ok.Mess1.Mess2'}_PKc)
@@ -77,10 +78,9 @@ played_by S def=
 
         % Receive response
         receive.
-            State:=5
-            /\ Rcv({Rep})
-        =|> 
-            State:=6
+            State=5
+            /\ Rcv({Rep'}_PKs) =|>
+            State':=6
 
 end role
 
@@ -98,7 +98,8 @@ role code (
 played_by C def=
 
     local 
-        Ns, Nc, Mess1: text,
+        State: nat,
+        Ns, Nc, Mess1: text
 
     init
         State:=0
@@ -106,7 +107,7 @@ played_by C def=
     transition
 
         % Receive first message from Shell
-        start.
+        begin.
             State=0
             /\ Rcv({Ns'.S}_PKc)
         =|>
@@ -124,12 +125,12 @@ played_by C def=
             /\ Snd({ok}_PKs)
 
         % Get first part of message
-        message. 
+        msg. 
             State=2
             /\ Rcv({Mess1'}_PKc)
         =|>
             State':=3
-            Snd({Mess1'.Mess2}_PKs)
+            /\ Snd({Mess1'.Mess2}_PKs)
         
         messageComplete.
             State=3
@@ -146,13 +147,14 @@ end role
 
 role master (
     M: agent,
-    PKm: public_key,
+    PKm, PKs: public_key,
     Snd, Rcv: channel(dy)
 )
 
 played_by M def=
 
     local 
+        State: nat,
         Rep, Mess1, Mess2: text
 
     init
@@ -167,7 +169,7 @@ played_by M def=
     =|>
         State':=1
         /\ Rep':=new()
-        /\ Snd({Rep'})
+        /\ Snd({Rep'}_PKs)
 
 end role
 
@@ -179,7 +181,11 @@ role session(
     S, C: agent,
     PKc, PKs, PKm: public_key,
     Snd, Rcv: channel(dy)
-)
+) def=
+
+composition 
+
+end role
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
