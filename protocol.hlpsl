@@ -28,10 +28,59 @@ role shell (
 played_by S def=
 
     local 
-        Ns, Nc: text
+        Ns, Nc, Mess2, Rep: text
 
     init
         State:=0
+
+    transition
+
+        % Start communication with Code
+        start.
+            State=0
+            /\ Rcv(start) 
+        =|>
+            State':=1
+            /\ Ns':=new()
+            /\ Snd({Ns'.S}_PKc)
+
+        % Confirm the reception of Code's nonce
+        confirm.
+            State=1 
+            /\ Rcv({Ns.Nc'}_PKs)
+        =|>
+            State':=2
+            /\ Snd({Nc'_PKc})
+
+        % Everything is ok let's start creating the request
+        message. 
+            State=2
+            /\ Rcv({ok}_PKs)
+        =|>
+            State':=3
+            /\ Snd({Mess1}_PKc)
+
+        % Receive full message from code
+        messageComplete.
+            State=3
+            /\ Rcv({Mess1.Mess2'}PKs)
+        =|>
+            State':=4
+            /\ Snd({ok.Mess1.Mess2'}_PKc)
+
+        % Send full message to Master
+        send.
+            State=4
+        =|>
+            State':=5
+            /\ Snd({Mess1.Mess2}_PKm)
+
+        % Receive response
+        receive.
+            State:=5
+            /\ Rcv({Rep})
+        =|> 
+            State:=6
 
 end role
 
@@ -49,10 +98,45 @@ role code (
 played_by C def=
 
     local 
-        Ns, Nc: text,
+        Ns, Nc, Mess1: text,
 
     init
         State:=0
+
+    transition
+
+        % Receive first message from Shell
+        start.
+            State=0
+            /\ Rcv({Ns'.S}_PKc)
+        =|>
+            State':=1
+            /\ Nc':=new()
+            /\ Snd({Ns'.Nc'}_PKs)
+
+        % Confirm the good nonce
+        confirm.
+            State=1
+            /\ Rcv({Nc}_PKc)
+        =|> 
+            State':=2
+            % Penser à mettre le (ou les) nonce(s) sur 'ok'
+            /\ Snd({ok}_PKs)
+
+        % Get first part of message
+        message. 
+            State=2
+            /\ Rcv({Mess1'}_PKc)
+        =|>
+            State':=3
+            Snd({Mess1'.Mess2}_PKs)
+        
+        messageComplete.
+            State=3
+            /\ Rcv({ok.Mess1.Mess2}_PKc)
+        =|>
+            State':=4
+
 
 end role
 
@@ -68,10 +152,22 @@ role master (
 
 played_by M def=
 
-    local Rep: text
+    local 
+        Rep, Mess1, Mess2: text
 
     init
-        State:=0    
+        State:=0  
+
+    transition  
+
+    % Receive Mess1.Mess2 and send response
+    send.
+        State=0
+        /\ Rcv({Mess1'.Mess2'}_PKm)
+    =|>
+        State':=1
+        /\ Rep':=new()
+        /\ Snd({Rep'})
 
 end role
 
@@ -96,8 +192,9 @@ role environment() def=
         Snd, Rcv: channel(dy)
 
     const
-        s, c, m: agent, 
-        pks, pkc, pki, pkm: public_key,
+        s, c, m: agent,
+        ok: text,
+        pks, pkc, pki, pkm: public_key
 
     intruder_knowledge = {s, c, m, pks, pkc, pkm, pki, inv(pki)}
 
