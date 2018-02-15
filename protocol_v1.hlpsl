@@ -1,0 +1,224 @@
+% PURPOSE: Syncronisation between two servers before sending a common request to another one
+% DESCRIPTION:
+% Two servers: Shell (S) and Code (C)
+% Third server: Master (M)
+
+% S ------- {Ns.S}_PKc ------------> C
+% S <------ {Ns.Nc}_PKs ------------ C
+% S ------- {Nc}_PKc --------------> C
+% S <------ {OK}_PKs --------------- C
+% S ------- {Mess1}_PKc -----------> C
+% S <------ {Mess1.Mess2}_PKs ------ C
+% S ------- {OK.Mess1.Mess2}_PKc --> C
+% S -------------- {Mess1.Mess2}_PKm ------------> M
+% S <------------- {OK.rep}_PKs ------------------ M
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Protocal: 
+
+% Role of Shell (S):
+
+role shell (
+    S, C, M: agent,
+    PKs, PKc, PKm: public_key,
+    Mess1: text,
+    Snd, Rcv: channel(dy)
+)
+
+played_by S def=
+
+    local 
+        State: nat,
+        Ns, Nc, Mess2, Rep: text
+
+    init
+        State:=0
+
+    transition
+
+        % Start communication with Code
+        begin.
+            State=0
+            /\ Rcv(start) 
+        =|>
+            State':=1
+            /\ Ns':=new()
+            /\ Snd({Ns'.S}_PKc)
+
+        % Confirm the reception of Code's nonce
+        confirm.
+            State=1 
+            /\ Rcv({Ns.Nc'}_PKs)
+        =|>
+            State':=2
+            /\ Snd({Nc'}_PKc)
+
+        % Everything is ok let's start creating the request
+        msg. 
+            State=2
+            /\ Rcv({ok}_PKs)
+        =|>
+            State':=3
+            /\ Snd({Mess1}_PKc)
+
+        % Receive full message from code
+        messageComplete.
+            State=3
+            /\ Rcv({Mess1.Mess2'}_PKs)
+        =|>
+            State':=4
+            /\ Snd({ok.Mess1.Mess2'}_PKc)
+
+        % Send full message to Master
+        send.
+            State=4
+        =|>
+            State':=5
+            /\ Snd({Mess1.Mess2}_PKm)
+
+        % Receive response
+        receive.
+            State=5
+            /\ Rcv(Rep') =|>
+            State':=6
+
+end role
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Role of Code (C):
+
+role code (
+    S, C, M: agent,
+    PKs, PKc, PKm: public_key,
+    Mess2: text,
+    Snd, Rcv: channel(dy)
+)
+
+played_by C def=
+
+    local 
+        State: nat,
+        Ns, Nc, Mess1: text
+
+    init
+        State:=0
+
+    transition
+
+        % Receive first message from Shell
+        begin.
+            State=0
+            /\ Rcv({Ns'.S}_PKc)
+        =|>
+            State':=1
+            /\ Nc':=new()
+            /\ Snd({Ns'.Nc'}_PKs)
+
+        % Confirm the good nonce
+        confirm.
+            State=1
+            /\ Rcv({Nc}_PKc)
+        =|> 
+            State':=2
+            % Penser à mettre le (ou les) nonce(s) sur 'ok'
+            /\ Snd({ok}_PKs)
+
+        % Get first part of message
+        msg. 
+            State=2
+            /\ Rcv({Mess1'}_PKc)
+        =|>
+            State':=3
+            /\ Snd({Mess1'.Mess2}_PKs)
+        
+        messageComplete.
+            State=3
+            /\ Rcv({ok.Mess1.Mess2}_PKc)
+        =|>
+            State':=4
+
+
+end role
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Role of Master (M):
+
+role master (
+    M: agent,
+    PKm: public_key,
+    Snd, Rcv: channel(dy)
+)
+
+played_by M def=
+
+    local 
+        State: nat,
+        Rep, Mess1, Mess2: text
+
+    init
+        State:=0  
+
+    transition  
+
+    % Receive Mess1.Mess2 and send response
+    send.
+        State=0
+        /\ Rcv({Mess1'.Mess2'}_PKm)
+    =|>
+        State':=1
+        /\ Rep':=new()
+        /\ Snd(Rep')
+
+end role
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Definition of session role:
+
+role session(
+    S, C: agent,
+    PKc, PKs, PKm: public_key,
+    Snd, Rcv: channel(dy)
+) def=
+
+composition 
+
+end role
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% The main role:
+
+role environment() def=
+
+    local 
+        Snd, Rcv: channel(dy)
+
+    const
+        s, c, m: agent,
+        ok: text,
+        pks, pkc, pki, pkm: public_key
+
+    intruder_knowledge = {s, c, m, pks, pkc, pkm, pki, inv(pki)}
+
+    composition
+    
+
+end role
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Description of goal properties:
+
+goal
+ 
+end goal
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Call of the main role:
+
+environment()
