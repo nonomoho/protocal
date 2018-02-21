@@ -4,7 +4,7 @@
 % Third server: Master (M)
 
 % S ------- {Mess1.Ns.S}_PKc ------------> C
-% S <------ {Mess1.Mess2.Ns.Nc}_PKs ------ C
+% S <------ {Mess1.Mess2.Ns.Nc.C}_PKs ---- C
 % S ------- {OK.Mess1.Mess2.Nc}_PKc -----> C
 % S -------------- {Mess1.Mess2}_PKm ------------> M
 % S <------------- {OK.rep}_PKs ------------------ M
@@ -41,6 +41,7 @@ played_by S def=
             /\ Ns':=new()
             /\ Snd({Mess1.Ns'.S}_PKc)
             /\ secret(Ns',sns,{S,C})
+            /\ witness(S,C,code_shell_ns,Ns')
 
         % Receive full message from code and confirm the reception of Code's nonce
         messageComplete.
@@ -62,6 +63,7 @@ played_by S def=
             State=3
             /\ Rcv(Rep') =|>
             State':=4
+            /\ request(S,C,shell_code_nc,Nc)
 
 end role
 
@@ -96,6 +98,7 @@ played_by C def=
             /\ Nc':=new()
             /\ Snd({Mess1'.Mess2.Ns'.Nc'.C}_PKs)
             /\ secret(Nc',snc,{C,S})
+            /\ witness(C,S,shell_code_nc,Nc')
 
         % Receive the confirmation from Shell
         messageComplete.
@@ -103,6 +106,7 @@ played_by C def=
             /\ Rcv({ok.Mess1.Mess2.Nc}_PKc)
         =|>
             State':=2
+            /\ request(C,S,code_shell_ns,Ns)
 
 
 end role
@@ -170,7 +174,7 @@ role environment() def=
         s, c, m, i: agent,
         ok, mess1, mess2: text,
         pks, pkc, pki, pkm: public_key,
-        sns, snc: protocol_id
+        sns, snc, shell_code_nc, code_shell_ns: protocol_id
 
     intruder_knowledge = {s, c, m, pks, pkc, pkm, pki, inv(pki)}
 
@@ -178,6 +182,8 @@ role environment() def=
     master(m,pkm,Snd,Rcv)
     /\ session(s,c,pks,pkc,pkm,mess1,mess2,Snd,Rcv)
     /\ session(s,i,pks,pki,pkm,mess1,mess2,Snd,Rcv)
+    /\ session(i,c,pki,pkc,pkm,mess1,mess2,Snd,Rcv)
+    
 
 end role
 
@@ -187,7 +193,9 @@ end role
 
 goal
 
-secrecy_of sns, snc % Keep secret the nonces
+    secrecy_of sns, snc % Keep secret the nonces
+    authentication_on shell_code_nc
+    authentication_on code_shell_ns
  
 end goal
 
