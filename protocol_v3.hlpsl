@@ -3,13 +3,9 @@
 % Two servers: Shell (S) and Code (C)
 % Third server: Master (M)
 
-% S ------- {Ns.S}_PKc ------------> C
-% S <------ {Ns.Nc}_PKs ------------ C
-% S ------- {Nc}_PKc --------------> C
-% S <------ {OK}_PKs --------------- C
-% S ------- {Mess1}_PKc -----------> C
-% S <------ {Mess1.Mess2}_PKs ------ C
-% S ------- {OK.Mess1.Mess2}_PKc --> C
+% S ------- {Mess1.Ns.S}_PKc ------------> C
+% S <------ {Mess1.Mess2.Ns.Nc}_PKs ------ C
+% S ------- {OK.Mess1.Mess2.Nc}_PKc -----> C
 % S -------------- {Mess1.Mess2}_PKm ------------> M
 % S <------------- {OK.rep}_PKs ------------------ M
 
@@ -19,7 +15,7 @@
 % Role of Shell (S):
 
 role shell (
-    S, C, M: agent,
+    S, C: agent,
     PKs, PKc, PKm: public_key,
     Mess1: text,
     Snd, Rcv: channel(dy)
@@ -36,51 +32,36 @@ played_by S def=
 
     transition
 
-        % Start communication with Code
+        % Start communication with Code and start creating the request
         begin.
             State=0
             /\ Rcv(start) 
         =|>
             State':=1
             /\ Ns':=new()
-            /\ Snd({Ns'.S}_PKc)
+            /\ Snd({Mess1.Ns'.S}_PKc)
+            /\ secret(Ns',sns,{S,C})
 
-        % Confirm the reception of Code's nonce
-        confirm.
-            State=1 
-            /\ Rcv({Ns.Nc'}_PKs)
+        % Receive full message from code and confirm the reception of Code's nonce
+        messageComplete.
+            State=1
+            /\ Rcv({Mess1.Mess2'.Ns.Nc'.C}_PKs)
         =|>
             State':=2
-            /\ Snd({Nc'}_PKc)
-
-        % Everything is ok let's start creating the request
-        msg. 
-            State=2
-            /\ Rcv({ok}_PKs)
-        =|>
-            State':=3
-            /\ Snd({Mess1}_PKc)
-
-        % Receive full message from code
-        messageComplete.
-            State=3
-            /\ Rcv({Mess1.Mess2'}_PKs)
-        =|>
-            State':=4
-            /\ Snd({ok.Mess1.Mess2'}_PKc)
+            /\ Snd({ok.Mess1.Mess2'.Nc'}_PKc)
 
         % Send full message to Master
         send.
-            State=4
+            State=2
         =|>
-            State':=5
+            State':=3
             /\ Snd({Mess1.Mess2}_PKm)
 
         % Receive response
         receive.
-            State=5
+            State=3
             /\ Rcv(Rep') =|>
-            State':=6
+            State':=4
 
 end role
 
@@ -89,7 +70,7 @@ end role
 % Role of Code (C):
 
 role code (
-    S, C, M: agent,
+    S, C: agent,
     PKs, PKc, PKm: public_key,
     Mess2: text,
     Snd, Rcv: channel(dy)
@@ -106,37 +87,22 @@ played_by C def=
 
     transition
 
-        % Receive first message from Shell
+        % Receive first message and first part of the request from Shell 
         begin.
             State=0
-            /\ Rcv({Ns'.S}_PKc)
+            /\ Rcv({Mess1'.Ns'.S}_PKc)
         =|>
             State':=1
             /\ Nc':=new()
-            /\ Snd({Ns'.Nc'}_PKs)
+            /\ Snd({Mess1'.Mess2.Ns'.Nc'.C}_PKs)
+            /\ secret(Nc',snc,{C,S})
 
-        % Confirm the good nonce
-        confirm.
-            State=1
-            /\ Rcv({Nc}_PKc)
-        =|> 
-            State':=2
-            % Penser à mettre le (ou les) nonce(s) sur 'ok'
-            /\ Snd({ok}_PKs)
-
-        % Get first part of message
-        msg. 
-            State=2
-            /\ Rcv({Mess1'}_PKc)
-        =|>
-            State':=3
-            /\ Snd({Mess1'.Mess2}_PKs)
-        
+        % Receive the confirmation from Shell
         messageComplete.
-            State=3
-            /\ Rcv({ok.Mess1.Mess2}_PKc)
+            State=1
+            /\ Rcv({ok.Mess1.Mess2.Nc}_PKc)
         =|>
-            State':=4
+            State':=2
 
 
 end role
@@ -179,11 +145,14 @@ end role
 
 role session(
     S, C: agent,
-    PKc, PKs, PKm: public_key,
+    PKs, PKc, PKm: public_key,
+    Mess1, Mess2: text,
     Snd, Rcv: channel(dy)
 ) def=
 
 composition 
+    shell(S,C,PKs,PKc,PKm,Mess1,Snd,Rcv)
+    /\ code(S,C,PKs,PKc,PKm,Mess2,Snd,Rcv)
 
 end role
 
@@ -198,14 +167,17 @@ role environment() def=
         Snd, Rcv: channel(dy)
 
     const
-        s, c, m: agent,
-        ok: text,
-        pks, pkc, pki, pkm: public_key
+        s, c, m, i: agent,
+        ok, mess1, mess2: text,
+        pks, pkc, pki, pkm: public_key,
+        sns, snc: protocol_id
 
     intruder_knowledge = {s, c, m, pks, pkc, pkm, pki, inv(pki)}
 
     composition
-    
+    master(m,pkm,Snd,Rcv)
+    /\ session(s,c,pks,pkc,pkm,mess1,mess2,Snd,Rcv)
+    /\ session(s,i,pks,pki,pkm,mess1,mess2,Snd,Rcv)
 
 end role
 
@@ -214,6 +186,8 @@ end role
 % Description of goal properties:
 
 goal
+
+secrecy_of sns, snc % Keep secret the nonces
  
 end goal
 

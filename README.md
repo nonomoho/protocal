@@ -56,7 +56,7 @@ S <------------- {OK.rep}_PKs ------------------ M
 
 C'est le serveur S qui est en charge de communiquer avec le serveur M. S envoie donc le message complet créé précédement et attend la réponse de M.
 
-### Points à améliorer
+### Points à améliorer à la v1
 
 * Les premiers échanges peuvent être intégrer à la construction du message
 * La réponse n'est connu que par le serveur "Shell" et non par "Code"
@@ -64,3 +64,16 @@ C'est le serveur S qui est en charge de communiquer avec le serveur M. S envoie 
 * Nous ne nous sommes pas encore posé toutes les questions de sécurité puisque nous n'avons pas encore d'intru.
 
 ## Deuxième version du protocole
+
+Correction des messages (on a changé de méthode d'envoi)
+
+Création du rôle session et ajout des  sessions
+Création des goals (secrecy nonces)
+
+On a supp le M dans shell et code car pas utilisé et comme full example on va faire un truc badass avec un unique master masterisé
+
+### Points à améliorer à la v2
+
+* Le protocole n'est pas safe sur un test simple (avec une session comprenant un intrus)
+* Faire plus de tests (avec des sessions différentes)
+* Il faut créer un deuxième goal (authentication par exemple) -- Amélioration de la V3
