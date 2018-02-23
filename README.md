@@ -134,7 +134,7 @@ end goal
 Nous avons trouvé une faille lors de l'ajout d'un intrus.
 Nous verrons dans la V3 comment nous avons corrigé cela.
 
-### Modification mineures
+### Modifications mineures
 
 Lors de la relecture de notre première version, nous avons découvert quelques incohérence comme la présence de la variable 'M' dans les rôles shell et code alors que cette dernière n'est pas utilisée.
 
