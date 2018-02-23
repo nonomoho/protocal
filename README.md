@@ -146,7 +146,7 @@ Lors de la relecture de notre première version, nous avons découvert quelques 
 
 ## Troisième version du protocol (V3)
 
-La description des messages de la V3 n'a pas beaucoup changé par rapport à la V2. Nous devions ajouter un détail pour corriger le problème vu précedemment :
+La description des messages de la V3 n'a pas beaucoup changé par rapport à la V2. Nous devions ajouter un détail pour corriger le problème "UNSAFE" vu précedemment.
 
 ### Correction du protocol
 
@@ -160,11 +160,28 @@ S -------------- {Mess1.Mess2}_PKm ------------> M
 S <------------- {OK.rep}_PKs ------------------ M
 ```
 
-Différence entre weak et strong athentication
-Normalement on est sur que une fois que S a fini le protocol avec C, alors c'est que C a auparavant terminé le même protocol (Sur l'auth forte normalement il y a une notion temporelle qui nous permet de savoir que C a fini le même protocol récemment)
+### Ajout de goals
+
+Nous avons créé un goal pour garantir le secret des nonces :
+
+``` text
+goal
+
+    secrecy_of sns, snc
+    authentication_on shell_code_nc
+    authentication_on code_shell_ns
+
+end goal
+```
+
+Nous avons ajouter deux goals pour l'authentification des utilisateurs par rapport aux nonce. Nous nous sommes reporté sur la documentation pour faire le choix entre weak et strong athentication.
+
+L'authentification nous permet d'être sûr que une fois que Shell a fini le protocol avec Code, alors c'est que Code a auparavant terminé le même protocol.
+
+Avec l'auth forte il y a une notion temporelle qui nous permet de savoir que C a fini le même protocol __récemment__ :
 
 Les nonces nous permettent de trouver la récencicité
-Ce sont des valeurs fraîches créées lors de l'execution du protocol. On est donc sûr que le tour de protocol du deuxième acteur est après le premier c  ar les valeurs sont fraîches.
+Ce sont des valeurs fraîches créées lors de l'execution du protocol. On est donc sûr que le tour de protocol du deuxième acteur est après le premier car les valeurs sont fraîches.
 
 ## Améliorations possibles
 
