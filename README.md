@@ -185,4 +185,9 @@ Ce sont des valeurs fraîches créées lors de l'execution du protocol. On est d
 
 ## Améliorations possibles
 
-On parle des tick
+Pour la partie synchronisation des deux serveurs, nous avons cherché des alternatives au simple échange initial entre C et S. Notre idée étant de rajouter une sorte d'horloge interne qui restreint les possibilités de communication entre les deux serveurs. Plus simplement, un acteur ne peut envoyer qu'un seul message tous les x ticks de l'horloge afin d'assurer la synchronicité. La mise en place de cette améliration réduit grandement la facilité de compréhension de notre protocole et n'apporte pas un réel bénéfice dans le cadre de la modélisation sous AVISPA.
+
+Nous avons aussi réfléchi à rendre la requête commune secrète de telle sorte que l'intrus ne puisse pas lire le contenu de cette requête. Ce qui aurait pu être intéressant, c'est de s'approcher de l'implémentation d'HTTPS (HTTP over TLS) qui est un protocole de communication protégeant les acteurs des attaques de type man-in-the-middle. 
+
+En pratique, l'implémentation d'HTTPS nécessite l'intervetion d'une authorité de certification, des acteurs possèdant des certificats valides, des clefs publiques, privées et une clef de session générée pour l'encryption des messages. L'ensemble de ces prérequis est modélisable sous AVISPA mais le protocole final obtenu serait beaucoup plus complexe, ce qui n'était pas forcément l'objectif de ce projet.
+
